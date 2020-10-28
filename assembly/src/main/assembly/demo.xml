@@ -1,0 +1,37 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    <id>demo</id>
+    <formats>
+        <format>dir</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <files>
+        <file>
+            <source>../pom.xml</source>
+        </file>
+        <file>
+            <source>../mvnw</source>
+        </file>
+        <file>
+            <source>../mvnw.cmd</source>
+        </file>
+    </files>
+
+    <fileSets>
+        <fileSet>
+            <directory>../example</directory>
+            <excludes>
+                <exclude>**/target/**</exclude>
+                <exclude>**/*.iml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>../.mvn</directory>
+            <excludes>
+                <exclude>**/*.iml</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+
+</assembly>

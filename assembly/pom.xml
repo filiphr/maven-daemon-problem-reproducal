@@ -1,0 +1,150 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example.maven.daemon</groupId>
+    <artifactId>maven-daemon-assembly</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <assembly.finalName>demo-${project.version}</assembly.finalName>
+        <assembly.tmp.folder>${project.build.directory}/${assembly.finalName}</assembly.tmp.folder>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.3.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>xml-maven-plugin</artifactId>
+                    <version>1.0.2</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>net.sf.saxon</groupId>
+                            <artifactId>Saxon-HE</artifactId>
+                            <version>10.2</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-invoker-plugin</artifactId>
+                    <version>3.2.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>3.0.0</version>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!--
+                            This execution is bound to the prepare package and it is the first plugin.
+                            Therefore it should be first
+                         -->
+                        <id>prepare-demo-packages</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/demo.xml</descriptor>
+                            </descriptors>
+                            <finalName>${assembly.finalName}</finalName>
+                            <attach>false</attach>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!--
+                            This is the 4th step.
+                            It is bound to the package phase so it should be executed after all the prepare-package steps are done.
+                        -->
+                        <id>prepare-final-demo-packages</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/demo-zip.xml</descriptor>
+                            </descriptors>
+                            <finalName>${assembly.finalName}</finalName>
+                            <attach>true</attach>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!--
+                            This is the second step that should be executed.
+                            It is bound to the prepare-package and it is the second plugin.
+                        -->
+                        <id>prune-demo-packages</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${assembly.tmp.folder}-demo</dir>
+                                    <outputDir>${assembly.tmp.folder}-demo</outputDir>
+                                    <includes>
+                                        <include>**/pom.xml</include>
+                                    </includes>
+                                    <stylesheet>src/main/xslt/prune-demo.xslt</stylesheet>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!--
+                            This is the third step that should be executed.
+                            It is bound to the prepare-package and it is the third plugin.
+                        -->
+                        <id>build-demo-package</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>../mvnw</executable>
+                            <workingDirectory>${assembly.tmp.folder}-demo</workingDirectory>
+                            <arguments>
+                                <argument>-Dmaven.repo.local=${assembly.tmp.folder}-demo/local_m2_repository</argument>
+                                <argument>-B</argument>
+                                <argument>-V</argument>
+                                <argument>--no-transfer-progress</argument>
+                                <argument>verify</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
